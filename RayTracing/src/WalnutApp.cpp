@@ -20,7 +20,13 @@ public:
 		if (ImGui::Button("Render")) {
 			Render();
 		}
-		ImGui::SliderFloat("Viewport distance", &m_ViewportDistance, 0.2f, 20);
+		if (ImGui::CollapsingHeader("Camera")) {
+				ImGui::SliderFloat3("Camera position", &m_CameraPosition.x, -5, 5);
+			if (ImGui::CollapsingHeader("Viewport")) {
+				ImGui::SliderFloat("Viewport distance", &m_ViewportDistance, 0, 5);
+				ImGui::SliderFloat("Viewport height", &m_ViewportCameraHeight, 0, 5);
+			}
+		}
 
 		ImGui::End();
 
@@ -50,25 +56,6 @@ public:
 			m_ImageData = new uint32_t[m_ViewportWidth * m_ViewportHeight];
 		}
 
-		struct Vec3
-		{
-			float                                   x, y, z;
-			Vec3() { x = y = z = 0.0f; }
-			Vec3(float _x, float _y, float _z) { x = _x; y = _y; z = _z; }
-			float  operator[] (size_t idx) const { IM_ASSERT(idx <= 1); return (&x)[idx]; }    // We very rarely use this [] operator, the assert overhead is fine.
-			float& operator[] (size_t idx) { IM_ASSERT(idx <= 1); return (&x)[idx]; }    // We very rarely use this [] operator, the assert overhead is fine.
-			float operator* (Vec3 other) { return (x * other.x + y * other.y + z * other.z); }
-			float operator* (float other) { return (x * other + y * other + z * other); }
-			Vec3 normalized() { float length = sqrt(operator*(Vec3(x, y, z))); return Vec3(x / length, y / length, z / length); }
-		};
-
-		Vec3 sphereOrigin = Vec3(1,2,0);
-		float sphereRadius = 1.0f;
-
-		Vec3 cameraPosition = Vec3(0.0f, 0.0f, 3.0f);
-		Vec3 cameraDirection = Vec3(0, 0, -1);
-		float cameraTilt = 0; //TODO: implement camera tilt
-		float viewportHeight = 2;
 
 
 
@@ -78,18 +65,17 @@ public:
 			int x = i % m_ViewportWidth;
 			int y = (int)(i / m_ViewportWidth);
 
-			float directionX = -(viewportHeight / m_ViewportHeight) * (x - (float)m_ViewportWidth / 2);
-			float directionY = viewportHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
+			float directionX = -(m_ViewportCameraHeight / m_ViewportHeight) * (x - (float)m_ViewportWidth / 2);
+			float directionY = m_ViewportCameraHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
 
-			
 
 			Vec3 rayDirection = Vec3(directionX, directionY, -m_ViewportDistance);
 			rayDirection = rayDirection.normalized();
 
 
 			float a = rayDirection * rayDirection;
-			float b = 2 * (cameraPosition * rayDirection + sphereOrigin * rayDirection);
-			float c = cameraPosition * cameraPosition + sphereOrigin * sphereOrigin - sphereRadius * sphereRadius;
+			float b = 2 * (m_CameraPosition * rayDirection + sphereOrigin * rayDirection);
+			float c = m_CameraPosition * m_CameraPosition + sphereOrigin * sphereOrigin - sphereRadius * sphereRadius;
 
 			float discriminant = (b * b) - (4 * a * c);
 
@@ -123,6 +109,27 @@ private:
 	uint32_t m_ViewportWidth = 8, m_ViewportHeight = 0;
 	uint32_t* m_ImageData = nullptr;
 	float m_LastRenderTime = 0.0f;
+
+
+
+	struct Vec3
+	{
+		float                                   x, y, z;
+		Vec3() { x = y = z = 0.0f; }
+		Vec3(float _x, float _y, float _z) { x = _x; y = _y; z = _z; }
+		float  operator[] (size_t idx) const { IM_ASSERT(idx <= 1); return (&x)[idx]; }    // We very rarely use this [] operator, the assert overhead is fine.
+		float& operator[] (size_t idx) { IM_ASSERT(idx <= 1); return (&x)[idx]; }    // We very rarely use this [] operator, the assert overhead is fine.
+		float operator* (Vec3 other) { return (x * other.x + y * other.y + z * other.z); }
+		float operator* (float other) { return (x * other + y * other + z * other); }
+		Vec3 normalized() { float length = sqrt(operator*(Vec3(x, y, z))); return Vec3(x / length, y / length, z / length); }
+	};
+
+	Vec3 sphereOrigin = Vec3(0, 0, 0);
+	float sphereRadius = 1.0f;
+
+	Vec3 m_CameraPosition = Vec3(0.0f, 0.0f, 3.0f);
+	Vec3 m_CameraDirection = Vec3(0, 0, -1);
+	float m_ViewportCameraHeight = 2;
 	float m_ViewportDistance = 2;
 };
 
