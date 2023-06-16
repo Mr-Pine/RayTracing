@@ -149,17 +149,16 @@ private:
 		float directionY = -m_ViewportCameraHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
 
 		vec3 rayDirection = directionX * m_CameraRight + directionY * m_CameraUp + m_CameraForward;
-		rayDirection = normalize(rayDirection);
 
 
-		float a = 1;//dot(rayDirection, rayDirection);
+		float a = dot(rayDirection, rayDirection);
 		float b = 2 * (dot(m_CameraPosition, rayDirection) - dot(sphereOrigin, rayDirection));
 		float c = dot(m_CameraPosition, m_CameraPosition) + dot(sphereOrigin, sphereOrigin) - 2 * dot(m_CameraPosition, sphereOrigin) - sphereRadius * sphereRadius;
 
 		float discriminant = (b * b) - (4 * a * c);
 
 		if (discriminant > 0.0f) {
-			float hitDistance = min((-b + sqrt(discriminant)), (-b - sqrt(discriminant))) * 0.5;//= / (2 * a);
+			float hitDistance = min((-b + sqrt(discriminant)), (-b - sqrt(discriminant))) / (2 * a);
 			if (hitDistance > 0) {
 				vec3 hitPoint = m_CameraPosition + rayDirection * hitDistance;
 				vec3 normal = normalize(hitPoint - sphereOrigin);
