@@ -81,36 +81,7 @@ public:
 			int x = i % m_ViewportWidth;
 			int y = (int)(i / m_ViewportWidth);
 
-			float directionX = (m_ViewportCameraHeight / m_ViewportHeight) * (x - (float)m_ViewportWidth / 2);
-			float directionY = -m_ViewportCameraHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
-
-			vec3 rayDirection = directionX * m_CameraRight + directionY * m_CameraUp + m_CameraForward;
-			rayDirection = normalize(rayDirection);
-
-
-			float a = 1;//dot(rayDirection, rayDirection);
-			float b = 2 * (dot(m_CameraPosition, rayDirection) - dot(sphereOrigin, rayDirection));
-			float c = dot(m_CameraPosition, m_CameraPosition) + dot(sphereOrigin, sphereOrigin) - 2 * dot(m_CameraPosition, sphereOrigin) - sphereRadius * sphereRadius;
-
-			float discriminant = (b * b) - (4 * a * c);
-
-			if (discriminant > 0.0f) {
-				float hitDistance = min((-b + sqrt(discriminant)), (-b - sqrt(discriminant))) * 0.5;//= / (2 * a);
-				if (hitDistance > 0) {
-					vec3 hitPoint = m_CameraPosition + rayDirection * hitDistance;
-					vec3 normal = normalize(hitPoint - sphereOrigin);
-					float angle = -dot(normal, normalize(m_LightDirection));
-					int32_t mappedDistance = (int)((3 - hitDistance) * 256) << 16;
-					m_ImageData[i] = /*mappedDistance |*/ 0xff990000;
-					int32_t lighting = (int32_t)(angle * (angle > 0) * 256) << 8;
-					m_ImageData[i] |= lighting;
-
-					continue;
-				}
-			}
-
-
-			m_ImageData[i] = 0xff000000;
+			m_ImageData[i] = PerPixel(x, y);			
 		}
 
 		m_Image->SetData(m_ImageData);
@@ -153,20 +124,46 @@ private:
 		
 		vec3 result = vector;
 
-		/*result.x = vector.x * valuesZ[Cos] - vector.y * valuesZ[Sin];
-		result.y = vector.x * valuesZ[Sin] + vector.y * valuesZ[Cos];
-
-		result.x = result.x * valuesY[Cos] + result.z * valuesY[Sin];
-		result.z = -result.x * valuesY[Sin] + result.z * valuesY[Cos];
-
-		result.y = result.y * valuesX[Cos] - result.z * valuesX[Sin];
-		result.z = result.y * valuesX[Sin] + result.z * valuesX[Cos];*/
-
 		result.x = vector.x * (valuesY[Cos] * valuesZ[Cos]) + vector.y * (valuesX[Sin] * valuesY[Sin] * valuesZ[Cos] - valuesX[Cos] * valuesZ[Sin]) + vector.z * (valuesX[Cos] * valuesY[Sin] * valuesZ[Cos] + valuesX[Sin] * valuesZ[Sin]);
 		result.y = vector.x * (valuesY[Cos] * valuesZ[Sin]) + vector.y * (valuesX[Sin] * valuesY[Sin] * valuesZ[Sin] + valuesX[Cos] * valuesZ[Cos]) + vector.z * (valuesX[Cos] * valuesY[Sin] * valuesZ[Sin] - valuesX[Sin] * valuesZ[Cos]);
 		result.z = vector.x * (-valuesY[Sin]) + vector.y * (valuesX[Sin] * valuesY[Cos]) + vector.z * (valuesX[Cos] * valuesY[Cos]);
 
 		return result;
+	}
+
+	uint32_t PerPixel(int x, int y) {
+
+		float directionX = (m_ViewportCameraHeight / m_ViewportHeight) * (x - (float)m_ViewportWidth / 2);
+		float directionY = -m_ViewportCameraHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
+
+		vec3 rayDirection = directionX * m_CameraRight + directionY * m_CameraUp + m_CameraForward;
+		rayDirection = normalize(rayDirection);
+
+
+		float a = 1;//dot(rayDirection, rayDirection);
+		float b = 2 * (dot(m_CameraPosition, rayDirection) - dot(sphereOrigin, rayDirection));
+		float c = dot(m_CameraPosition, m_CameraPosition) + dot(sphereOrigin, sphereOrigin) - 2 * dot(m_CameraPosition, sphereOrigin) - sphereRadius * sphereRadius;
+
+		float discriminant = (b * b) - (4 * a * c);
+
+		if (discriminant > 0.0f) {
+			float hitDistance = min((-b + sqrt(discriminant)), (-b - sqrt(discriminant))) * 0.5;//= / (2 * a);
+			if (hitDistance > 0) {
+				vec3 hitPoint = m_CameraPosition + rayDirection * hitDistance;
+				vec3 normal = normalize(hitPoint - sphereOrigin);
+				float angle = -dot(normal, normalize(m_LightDirection));
+				int32_t mappedDistance = (int)((3 - hitDistance) * 256) << 16;
+				uint32_t value = 0xff990000;
+				int32_t lighting = (int32_t)(angle * (angle > 0) * 256) << 8;
+				value |= lighting;
+
+				return value;
+			}
+		}
+
+
+		return 0xff000000;
+
 	}
 };
 
