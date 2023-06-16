@@ -13,7 +13,7 @@ using namespace Walnut;
 using namespace glm;
 
 namespace Utils {
-	static uint32_t ConvertToRGBA(glm::vec4& color) {
+	static uint32_t ConvertToRGBA(vec4& color) {
 		uint8_t alpha = (uint8_t)(color.a * 255.0f);
 		uint8_t red = (uint8_t)(color.r * 255.0f);
 		uint8_t green = (uint8_t)(color.g * 255.0f);
@@ -91,8 +91,8 @@ public:
 			int x = i % m_ViewportWidth;
 			int y = (int)(i / m_ViewportWidth);
 
-			 glm::vec4 color = PerPixel(x, y);
-			 color = glm::clamp(color, glm::vec4(0), glm::vec4(1));
+			 vec4 color = PerPixel(x, y);
+			 color = clamp(color, vec4(0), vec4(1));
 			 m_ImageData[i] = Utils::ConvertToRGBA(color);
 		}
 
@@ -143,7 +143,7 @@ private:
 		return result;
 	}
 
-	glm::vec4 PerPixel(int x, int y) {
+	vec4 PerPixel(int x, int y) {
 
 		float directionX = (m_ViewportCameraHeight / m_ViewportHeight) * (x - (float)m_ViewportWidth / 2);
 		float directionY = -m_ViewportCameraHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
@@ -166,12 +166,12 @@ private:
 				float lighting = -dot(normal, normalize(m_LightDirection));
 				float lighting_pos = lighting * (lighting > 0);
 
-				return glm::vec4(0,lighting,0.6f,1);
+				return vec4(0,lighting,0.6f,1);
 			}
 		}
 
 
-		return glm::vec4(0,0,0,1);
+		return vec4(0,0,0,1);
 
 	}
 };
