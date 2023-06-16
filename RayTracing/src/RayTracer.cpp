@@ -12,14 +12,15 @@
 using namespace Walnut;
 using namespace glm;
 
-class ExampleLayer : public Walnut::Layer
+class RayTracingLayer : public Walnut::Layer
 {
 public:
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Settings");
 
-		ImGui::Text("Last render: %.3fms", m_LastRenderTime);
+		ImGui::Text("Last render: %.3fms", m_LastRenderTime_ms);
+		ImGui::Text("Framerate: %.2fms", 1/m_LastRenderTime_s);
 		if (ImGui::Button("Render")) {
 			Render();
 		}
@@ -83,7 +84,6 @@ public:
 			float directionX = (m_ViewportCameraHeight / m_ViewportHeight) * (x - (float)m_ViewportWidth / 2);
 			float directionY = -m_ViewportCameraHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
 
-
 			vec3 rayDirection = directionX * m_CameraRight + directionY * m_CameraUp + m_CameraForward;
 			rayDirection = normalize(rayDirection);
 
@@ -115,7 +115,8 @@ public:
 
 		m_Image->SetData(m_ImageData);
 
-		m_LastRenderTime = timer.ElapsedMillis();
+		m_LastRenderTime_ms = timer.ElapsedMillis();
+		m_LastRenderTime_s = m_LastRenderTime_ms * 0.001;
 	}
 private:
 	const float pi = 3.1415926535897932384626433832795;
@@ -123,7 +124,8 @@ private:
 	std::shared_ptr<Image> m_Image;
 	uint32_t m_ViewportWidth = 8, m_ViewportHeight = 0;
 	uint32_t* m_ImageData = nullptr;
-	float m_LastRenderTime = 0.0f;
+	float m_LastRenderTime_ms = 0.0f;
+	float m_LastRenderTime_s = 0.0f;
 
 	vec3 sphereOrigin = vec3(0, 0, 0);
 	float sphereRadius = 1.0f;
@@ -174,7 +176,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	spec.Name = "RayTracing";
 
 	Walnut::Application* app = new Walnut::Application(spec);
-	app->PushLayer<ExampleLayer>();
+	app->PushLayer<RayTracingLayer>();
 	app->SetMenubarCallback([app]()
 		{
 			if (ImGui::BeginMenu("File"))
