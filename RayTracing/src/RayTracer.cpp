@@ -12,6 +12,16 @@
 using namespace Walnut;
 using namespace glm;
 
+namespace Utils {
+	static uint32_t ConvertToRGBA(glm::vec4& color) {
+		uint8_t alpha = (uint8_t)(color.a * 255.0f);
+		uint8_t red = (uint8_t)(color.r * 255.0f);
+		uint8_t green = (uint8_t)(color.g * 255.0f);
+		uint8_t blue = (uint8_t) (color.b * 255.0f);
+		return (alpha << 24) | (blue << 16) | (green << 8) | red;
+	}
+}
+
 class RayTracingLayer : public Walnut::Layer
 {
 public:
@@ -81,7 +91,9 @@ public:
 			int x = i % m_ViewportWidth;
 			int y = (int)(i / m_ViewportWidth);
 
-			m_ImageData[i] = PerPixel(x, y);			
+			 glm::vec4 color = PerPixel(x, y);
+			 color = glm::clamp(color, glm::vec4(0), glm::vec4(1));
+			 m_ImageData[i] = Utils::ConvertToRGBA(color);
 		}
 
 		m_Image->SetData(m_ImageData);
@@ -131,7 +143,7 @@ private:
 		return result;
 	}
 
-	uint32_t PerPixel(int x, int y) {
+	glm::vec4 PerPixel(int x, int y) {
 
 		float directionX = (m_ViewportCameraHeight / m_ViewportHeight) * (x - (float)m_ViewportWidth / 2);
 		float directionY = -m_ViewportCameraHeight * (y - (float)m_ViewportHeight / 2) / m_ViewportHeight;
@@ -151,18 +163,15 @@ private:
 			if (hitDistance > 0) {
 				vec3 hitPoint = m_CameraPosition + rayDirection * hitDistance;
 				vec3 normal = normalize(hitPoint - sphereOrigin);
-				float angle = -dot(normal, normalize(m_LightDirection));
-				int32_t mappedDistance = (int)((3 - hitDistance) * 256) << 16;
-				uint32_t value = 0xff990000;
-				int32_t lighting = (int32_t)(angle * (angle > 0) * 256) << 8;
-				value |= lighting;
+				float lighting = -dot(normal, normalize(m_LightDirection));
+				float lighting_pos = lighting * (lighting > 0);
 
-				return value;
+				return glm::vec4(0,lighting,0.6f,1);
 			}
 		}
 
 
-		return 0xff000000;
+		return glm::vec4(0,0,0,1);
 
 	}
 };
