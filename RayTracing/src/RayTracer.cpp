@@ -5,6 +5,7 @@
 #include "Walnut/Timer.h"
 
 #include "Renderer.h"
+#include "Camera.h"
 
 using namespace Walnut;
 using namespace glm;
@@ -12,6 +13,14 @@ using namespace glm;
 class RayTracingLayer : public Walnut::Layer
 {
 public:
+	RayTracingLayer(): m_Camera(45.0f, 0.1f, 100.0f) {}
+
+	virtual void OnUpdate(float ts) override
+	{
+		m_Camera.OnUpdate(ts);
+	}
+
+
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Settings");
@@ -25,8 +34,8 @@ public:
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::Begin("Viewport");
 
-		m_ViewportWidth = ImGui::GetContentRegionAvail().x;
-		m_ViewportHeight = ImGui::GetContentRegionAvail().y;
+		m_ViewportWidth = (uint32_t) ImGui::GetContentRegionAvail().x;
+		m_ViewportHeight = (uint32_t) ImGui::GetContentRegionAvail().y;
 
 		auto image = m_Renderer.GetFinalImage();
 		if (image) {
@@ -44,13 +53,14 @@ public:
 		Timer timer;
 
 		m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
-		m_Renderer.Render();
+		m_Camera.OnResize(m_ViewportWidth, m_ViewportHeight);
+		m_Renderer.Render(m_Camera);
 
 		m_LastRenderTime_ms = timer.ElapsedMillis();
 	}
 private:
-
 	Renderer m_Renderer;
+	Camera m_Camera;
 
 	uint32_t m_ViewportWidth = 8, m_ViewportHeight = 0;
 	float m_LastRenderTime_ms = 0.0f;

@@ -15,7 +15,10 @@ namespace Utils {
 
 }
 
-void Renderer::Render() {
+void Renderer::Render(const Camera& camera) {
+	Ray ray;
+	ray.Origin = camera.GetPosition();
+
 	uint32_t width = m_FinalImage->GetWidth();
 	uint32_t height = m_FinalImage->GetHeight();
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
@@ -23,7 +26,9 @@ void Renderer::Render() {
 			glm::vec2 coord = { (float)x / (float)width, (float)y / (float)height };
 			coord = coord * 2.0f - 1.0f; // Map 0 -> 1 to -1 -> 1
 
-			glm::vec4 color = RenderPixel(coord);
+			ray.Direction = camera.GetRayDirections()[x + y * width];
+
+			glm::vec4 color = TraceRay(ray);
 			color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
 			m_ImageData[x + y * width] = Utils::ConvertToRGBA(color);
 		}
@@ -49,15 +54,12 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
 	m_ImageData = new uint32_t[width * height];
 }
 
-glm::vec4 Renderer::RenderPixel(glm::vec2 coordinates) {
-
-	glm::vec3 rayOrigin(0, 0, 1);
-	glm::vec3 rayDirection(coordinates, -1);
+glm::vec4 Renderer::TraceRay(const Ray& ray) {
 	float radius = 0.5f;
 
-	float a = glm::dot(rayDirection, rayDirection);
-	float b = 2.0f * glm::dot(rayOrigin, rayDirection);
-	float c = glm::dot(rayOrigin, rayOrigin) - radius * radius;
+	float a = glm::dot(ray.Direction, ray.Direction);
+	float b = 2.0f * glm::dot(ray.Origin, ray.Direction);
+	float c = glm::dot(ray.Origin, ray.Origin) - radius * radius;
 
 	float discriminant = (b * b) - (4 * a * c);
 
@@ -68,7 +70,7 @@ glm::vec4 Renderer::RenderPixel(glm::vec2 coordinates) {
 	float closestT = (-b - glm::sqrt(discriminant)) / (2.0f * a);
 	float t0 = (-b + glm::sqrt(discriminant)) / (2.0f * a); // Second hit distance (currently unused)
 
-	glm::vec3 hitPoint = rayOrigin + rayDirection * closestT;
+	glm::vec3 hitPoint = ray.Origin + ray.Direction * closestT;
 	glm::vec3 normal = glm::normalize(hitPoint);
 
 	glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
