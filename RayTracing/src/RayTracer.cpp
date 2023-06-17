@@ -2,12 +2,7 @@
 #include "Walnut/EntryPoint.h"
 
 #include "Walnut/Image.h"
-#include "Walnut/Random.h"
 #include "Walnut/Timer.h"
-#include <iostream>
-#include <bitset>
-#include <glm/glm.hpp>
-#include <glm/gtx/rotate_vector.hpp>
 
 #include "Renderer.h"
 
@@ -20,13 +15,11 @@ public:
 	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Settings");
-
 		ImGui::Text("Last render: %.3fms", m_LastRenderTime_ms);
 		ImGui::Text("Framerate: %.2f", 1000 / (m_LastRenderTime_ms));
 		if (ImGui::Button("Render")) {
 			Render();
 		}
-
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -37,13 +30,13 @@ public:
 
 		auto image = m_Renderer.GetFinalImage();
 		if (image) {
-			ImGui::Image(image->GetDescriptorSet(), { (float)image->GetWidth(), (float)image->GetHeight() }, ImVec2(0,1), ImVec2(0,1));
+			ImGui::Image(image->GetDescriptorSet(), { (float)image->GetWidth(), (float)image->GetHeight() }, ImVec2(0, 1), ImVec2(1, 0));
 		}
 
 		ImGui::End();
 		ImGui::PopStyleVar();
 
-		//Render();
+		Render();
 	}
 
 	void Render() {
