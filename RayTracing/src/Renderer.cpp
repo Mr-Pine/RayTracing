@@ -25,6 +25,10 @@ void Renderer::Render(const Scene& scene, const Camera& camera) {
 
 	const uint32_t width = m_FinalImage->GetWidth();
 	const uint32_t height = m_FinalImage->GetHeight();
+
+	if (m_FrameIndex == 1)
+		memset(m_AccumulationData, 0, width * height * sizeof(glm::vec4));
+
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++) {
 			glm::vec2 coord = { (float)x / (float)width, (float)y / (float)height };
@@ -32,12 +36,22 @@ void Renderer::Render(const Scene& scene, const Camera& camera) {
 
 
 			glm::vec4 color = PerPixel(x, y);
-			color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
-			m_ImageData[x + y * width] = Utils::ConvertToRGBA(color);
+			m_AccumulationData[x + y * width] += color;
+
+			glm::vec4 accumulated = m_AccumulationData[x + y * width];
+			accumulated /= (float)m_FrameIndex;
+
+			accumulated = glm::clamp(accumulated, glm::vec4(0.0f), glm::vec4(1.0f));
+			m_ImageData[x + y * width] = Utils::ConvertToRGBA(accumulated);
 		}
 	}
 
 	m_FinalImage->SetData(m_ImageData);
+
+	if(m_Settings.Accumulate)
+		m_FrameIndex++;
+	else
+		m_FrameIndex = 1;
 }
 
 glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
@@ -49,7 +63,7 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	glm::vec3 color(0);
 	float multiplier = 1.0f;
 
-	int bounces = 10;
+	int bounces = 3;
 	for (int i = 0; i < bounces; i++)
 	{
 		const HitPayload payload = TraceRay(ray);
@@ -97,6 +111,9 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
 
 	delete[] m_ImageData;
 	m_ImageData = new uint32_t[width * height];
+	delete[] m_AccumulationData;
+	m_AccumulationData = new glm::vec4[width * height];
+	m_FrameIndex = 1;
 }
 
 Renderer::HitPayload Renderer::TraceRay(const Ray& ray) {

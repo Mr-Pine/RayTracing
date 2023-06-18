@@ -48,7 +48,8 @@ public:
 
 	virtual void OnUpdate(float ts) override
 	{
-		m_Camera.OnUpdate(ts);
+		if (m_Camera.OnUpdate(ts))
+			m_Renderer.ResetFrameIndex();
 	}
 
 
@@ -60,20 +61,37 @@ public:
 		if (ImGui::Button("Render")) {
 			Render();
 		}
+
+		ImGui::Text("Accumulation count: %d", m_Renderer.GetAccumulationCount());
+		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
+		if (ImGui::Button("Reset")) {
+			m_Renderer.ResetFrameIndex();
+		}
 		ImGui::End();
 
 		ImGui::Begin("Scene");
-		for (size_t i = 0; i < m_Scene.Spheres.size(); i++) {
-			ImGui::PushID(i);
-			
-			Sphere& sphere = m_Scene.Spheres[i];
-			Material& material = m_Scene.Materials[sphere.MaterialIndex];
-			ImGui::DragFloat3("Position", glm::value_ptr(sphere.Position), 0.1f);
-			ImGui::DragFloat("Radius", &sphere.Radius, 0.1f);
-			ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
-			ImGui::DragFloat("Roughness", &material.Roughness, 0.1f);
-			ImGui::DragFloat("Metallic", &material.Metallic, 0.1f);
-			ImGui::PopID();
+		if (ImGui::CollapsingHeader("Spheres")) {
+			for (size_t i = 0; i < m_Scene.Spheres.size(); i++) {
+				ImGui::PushID(i);
+
+				Sphere& sphere = m_Scene.Spheres[i];
+				ImGui::DragFloat3("Position", glm::value_ptr(sphere.Position), 0.1f);
+				ImGui::DragFloat("Radius", &sphere.Radius, 0.1f, 0);
+				ImGui::DragInt("Material index", &sphere.MaterialIndex, 1, 0, m_Scene.Materials.size() - 1);
+				ImGui::Separator();
+				ImGui::PopID();
+			}
+		}
+		if (ImGui::CollapsingHeader("Materials")) {
+			for (size_t i = 0; i < m_Scene.Materials.size(); i++) {
+				ImGui::PushID(i);
+				Material& material = m_Scene.Materials[i];
+				ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
+				ImGui::DragFloat("Roughness", &material.Roughness, 0.01f, 0, 1);
+				ImGui::DragFloat("Metallic", &material.Metallic, 0.01f, 0, 1);
+				ImGui::Separator();
+				ImGui::PopID();
+			}
 		}
 		ImGui::End();
 
