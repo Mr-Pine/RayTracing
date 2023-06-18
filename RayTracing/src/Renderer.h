@@ -49,6 +49,8 @@ private:
 	const Camera* m_ActiveCamera = nullptr;
 	Settings m_Settings;
 
+	std::vector<uint32_t> m_ImageHorizontalIter;
+	std::vector<uint32_t> m_ImageVertiacalIter;
 
 	uint32_t* m_ImageData = nullptr;
 	glm::vec4* m_AccumulationData = nullptr;

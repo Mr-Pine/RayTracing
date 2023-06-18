@@ -1,4 +1,5 @@
 #include <crtdbg.h>
+#include <execution>
 #include "Walnut/Random.h"
 
 #include "Renderer.h"
@@ -28,14 +29,36 @@ void Renderer::Render(const Scene& scene, const Camera& camera) {
 
 	if (m_FrameIndex == 1)
 		memset(m_AccumulationData, 0, width * height * sizeof(glm::vec4));
+#define MT
+#ifdef MT
+	std::for_each(std::execution::par, m_ImageVertiacalIter.begin(), m_ImageVertiacalIter.end(),
+		[this, width, height](uint32_t y)
+		{
+			std::for_each(std::execution::par, m_ImageHorizontalIter.begin(), m_ImageHorizontalIter.end(),
+			[this, y, width, height](uint32_t x)
+				{
+					glm::vec2 coord = { (float)x / (float)width, (float)y / (float)height };
+					coord = coord * 2.0f - 1.0f; // Map 0 -> 1 to -1 -> 1
 
+
+					const glm::vec4 color = PerPixel(x, y);
+					m_AccumulationData[x + y * width] += color;
+
+					glm::vec4 accumulated = m_AccumulationData[x + y * width];
+					accumulated /= (float)m_FrameIndex;
+
+					accumulated = glm::clamp(accumulated, glm::vec4(0.0f), glm::vec4(1.0f));
+					m_ImageData[x + y * width] = Utils::ConvertToRGBA(accumulated);
+				});
+		});
+#else
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
 		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++) {
 			glm::vec2 coord = { (float)x / (float)width, (float)y / (float)height };
 			coord = coord * 2.0f - 1.0f; // Map 0 -> 1 to -1 -> 1
 
 
-			glm::vec4 color = PerPixel(x, y);
+			const glm::vec4 color = PerPixel(x, y);
 			m_AccumulationData[x + y * width] += color;
 
 			glm::vec4 accumulated = m_AccumulationData[x + y * width];
@@ -45,6 +68,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera) {
 			m_ImageData[x + y * width] = Utils::ConvertToRGBA(accumulated);
 		}
 	}
+#endif
 
 	m_FinalImage->SetData(m_ImageData);
 
@@ -99,10 +123,8 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
 		if (width == m_FinalImage->GetWidth() && height == m_FinalImage->GetHeight()) {
 			return; // No resize necessary
 		}
-		else {
-			_RPT0(_CRT_WARN, "Updataing image size");
-			m_FinalImage->Resize(width, height);
-		}
+		_RPT0(_CRT_WARN, "Updataing image size");
+		m_FinalImage->Resize(width, height);
 	}
 	else {
 		m_FinalImage = std::make_shared<Walnut::Image>(width, height, Walnut::ImageFormat::RGBA);
@@ -114,6 +136,13 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
 	delete[] m_AccumulationData;
 	m_AccumulationData = new glm::vec4[width * height];
 	m_FrameIndex = 1;
+
+	m_ImageHorizontalIter.resize(width);
+	m_ImageVertiacalIter.resize(height);
+	for (uint32_t i = 0; i < width; i++)
+		m_ImageHorizontalIter[i] = i;
+	for (uint32_t i = 0; i < height; i++)
+		 m_ImageVertiacalIter[i] = i;
 }
 
 Renderer::HitPayload Renderer::TraceRay(const Ray& ray) {
