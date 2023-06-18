@@ -44,28 +44,37 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FinalImage->GetWidth()];
 
-	const HitPayload payload = TraceRay(ray);
+	glm::vec3 color(0);
+	float multiplier = 1.0f;
 
-	if (payload.HitDistance < 0.0f)
+	int bounces = 2;
+	for (int i = 0; i < bounces; i++)
 	{
-		return glm::vec4(0, 0, 0, 1);
+		const HitPayload payload = TraceRay(ray);
+
+		if (payload.HitDistance < 0.0f)
+		{
+			glm::vec3 skyColor(0, 0, 0);
+			color += skyColor * multiplier;
+			break;
+		}
+
+		const glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
+
+		const float lightIntensity = glm::max(-glm::dot(payload.WorldNormal, lightDir), 0.0f); // == cos(angle)
+
+		const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
+		glm::vec3 sphereColor = sphere.Albedo * lightIntensity;
+		color += sphereColor * multiplier;
+
+		multiplier *= 0.7f;
+
+
+		ray.Origin = payload.WorldPosition + payload.WorldNormal * 0.0001f;
+		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal);
 	}
 
-	Ray reflectionRay;
-	reflectionRay.Origin = payload.WorldPosition;
-	reflectionRay.Direction = ray.Direction - 2 * glm::dot(ray.Direction, payload.WorldNormal) * payload.WorldNormal;
-	const HitPayload reflectionPayload = TraceRay(reflectionRay);
-
-	const glm::vec3 lightDir = glm::normalize(glm::vec3(-1, -1, -1));
-
-	const float lightIntensity = glm::max(-glm::dot(payload.WorldNormal, lightDir), 0.0f); // == cos(angle)
-	const float reflectionLightIntensity = glm::max(-glm::dot(reflectionPayload.WorldNormal, lightDir), 0.0f); // == cos(angle)
-
-	const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
-	const Sphere& reflectionSphere = m_ActiveScene->Spheres[reflectionPayload.ObjectIndex];
-	glm::vec3 sphereColor = sphere.Albedo * lightIntensity;
-	glm::vec3 reflectionSphereColor = reflectionSphere.Albedo * reflectionLightIntensity * 0.5f;
-	return { sphereColor + reflectionSphereColor, 1 };
+	return { color, 1 };
 }
 
 void Renderer::OnResize(uint32_t width, uint32_t height) {
@@ -105,7 +114,7 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray) {
 			continue;
 
 		const float closestT = (-b - glm::sqrt(discriminant)) / (2.0f * a);
-		if (closestT >= 0.0f && closestT < hitDistance) {
+		if (closestT > 0.0f && closestT < hitDistance) {
 			closestSphereIndex = i;
 			hitDistance = closestT;
 		}
