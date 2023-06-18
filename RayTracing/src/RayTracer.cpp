@@ -26,7 +26,7 @@ public:
 		blueSphere.Roughness = 0.1f;
 
 		Material& orangeSphere = m_Scene.Materials.emplace_back();
-		orangeSphere.Albedo = { 0.8f, 0.3f, 0.2f };
+		orangeSphere.Albedo = { 0.8f, 0.5f, 0.2f };
 		orangeSphere.Roughness = 0.1f;
 		orangeSphere.EmissionColor = orangeSphere.Albedo;
 		orangeSphere.EmissionPower = 2.0f;
@@ -50,7 +50,7 @@ public:
 
 		{
 			Sphere sphere;
-			sphere.Position = { 0.0f, -101.0f, -5.0f };
+			sphere.Position = { 0.0f, -101.0f, 0.0f };
 			sphere.Radius = 100.0f;
 			sphere.MaterialIndex = 1;
 			m_Scene.Spheres.push_back(sphere);
