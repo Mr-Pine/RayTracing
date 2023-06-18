@@ -16,19 +16,32 @@ class RayTracingLayer : public Walnut::Layer
 {
 public:
 	RayTracingLayer() : m_Camera(45.0f, 0.1f, 100.0f) {
+
+		{
+			Material material;
+			material.Albedo = { 1, 0, 0 };
+			m_Scene.Materials.push_back(material);
+		}
+
+		{
+			Material material;
+			material.Albedo = { 0.2f, 0.2f, 1 };
+			m_Scene.Materials.push_back(material);
+		}
+
 		{
 			Sphere sphere;
 			sphere.Position = { 0.0f, 0.0f, 0.0f };
-			sphere.Radius = 0.5f;
-			sphere.Albedo = { 1, 0, 0 };
+			sphere.Radius = 1.0f;
+			sphere.MaterialIndex = 0;
 			m_Scene.Spheres.push_back(sphere);
 		}
 
 		{
 			Sphere sphere;
-			sphere.Position = { 1.0f, 0.0f, -5.0f };
-			sphere.Radius = 1.5f;
-			sphere.Albedo = { 0.2f, 0.2f, 1 };
+			sphere.Position = { 0.0f, -101.0f, -5.0f };
+			sphere.Radius = 100.0f;
+			sphere.MaterialIndex = 1;
 			m_Scene.Spheres.push_back(sphere);
 		}
 	}
@@ -43,7 +56,7 @@ public:
 	{
 		ImGui::Begin("Settings");
 		ImGui::Text("Last render: %.3fms", m_LastRenderTime_ms);
-		ImGui::Text("Framerate: %.2f", 1000 / (m_LastRenderTime_ms));
+		ImGui::Text("Frame rate: %.2f", 1000 / (m_LastRenderTime_ms));
 		if (ImGui::Button("Render")) {
 			Render();
 		}
@@ -54,9 +67,12 @@ public:
 			ImGui::PushID(i);
 			
 			Sphere& sphere = m_Scene.Spheres[i];
+			Material& material = m_Scene.Materials[sphere.MaterialIndex];
 			ImGui::DragFloat3("Position", glm::value_ptr(sphere.Position), 0.1f);
 			ImGui::DragFloat("Radius", &sphere.Radius, 0.1f);
-			ImGui::ColorEdit3("Albedo", glm::value_ptr(sphere.Albedo), 0.1f);
+			ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
+			ImGui::DragFloat("Roughness", &material.Roughness, 0.1f);
+			ImGui::DragFloat("Metallic", &material.Metallic, 0.1f);
 			ImGui::PopID();
 		}
 		ImGui::End();

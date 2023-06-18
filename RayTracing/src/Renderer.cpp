@@ -1,4 +1,6 @@
 #include <crtdbg.h>
+#include "Walnut/Random.h"
+
 #include "Renderer.h"
 #include "Camera.h"
 
@@ -24,7 +26,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera) {
 	const uint32_t width = m_FinalImage->GetWidth();
 	const uint32_t height = m_FinalImage->GetHeight();
 	for (uint32_t y = 0; y < m_FinalImage->GetHeight(); y++) {
-		for (uint32_t x = 0; x < m_FinalImage->GetHeight(); x++) {
+		for (uint32_t x = 0; x < m_FinalImage->GetWidth(); x++) {
 			glm::vec2 coord = { (float)x / (float)width, (float)y / (float)height };
 			coord = coord * 2.0f - 1.0f; // Map 0 -> 1 to -1 -> 1
 
@@ -47,14 +49,14 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 	glm::vec3 color(0);
 	float multiplier = 1.0f;
 
-	int bounces = 2;
+	int bounces = 10;
 	for (int i = 0; i < bounces; i++)
 	{
 		const HitPayload payload = TraceRay(ray);
 
 		if (payload.HitDistance < 0.0f)
 		{
-			glm::vec3 skyColor(0, 0, 0);
+			glm::vec3 skyColor(0.6f, 0.7f, 0.9f);
 			color += skyColor * multiplier;
 			break;
 		}
@@ -64,14 +66,15 @@ glm::vec4 Renderer::PerPixel(uint32_t x, uint32_t y)
 		const float lightIntensity = glm::max(-glm::dot(payload.WorldNormal, lightDir), 0.0f); // == cos(angle)
 
 		const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
-		glm::vec3 sphereColor = sphere.Albedo * lightIntensity;
+		const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
+		glm::vec3 sphereColor = material.Albedo * lightIntensity;
 		color += sphereColor * multiplier;
 
 		multiplier *= 0.7f;
 
 
 		ray.Origin = payload.WorldPosition + payload.WorldNormal * 0.0001f;
-		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal);
+		ray.Direction = glm::reflect(ray.Direction, glm::normalize(payload.WorldNormal + material.Roughness * Walnut::Random::Vec3(-0.5f, 0.5f)));
 	}
 
 	return { color, 1 };
