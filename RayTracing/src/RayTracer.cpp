@@ -55,6 +55,14 @@ public:
 			sphere.MaterialIndex = 1;
 			m_Scene.Spheres.push_back(sphere);
 		}
+
+		Triangle& triangle = m_Scene.Triangles.emplace_back();
+		triangle.MaterialIndex = 1;
+		triangle.Vertices.operator[](0);
+		triangle.Vertices[0];
+		/*triangle.Vertices[0] = {0,0,0};
+		triangle.Vertices[1] = { 1,1,1 };
+		triangle.Vertices[2] = { 2,2,2 };*/
 	}
 
 	virtual void OnUpdate(float ts) override

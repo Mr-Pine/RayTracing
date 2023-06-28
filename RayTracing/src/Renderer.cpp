@@ -39,7 +39,7 @@ namespace Utils {
 
 }
 
-void Renderer::Render(const Scene& scene, const Camera& camera) {
+void Renderer::Render(Scene& scene, const Camera& camera) {
 	m_ActiveCamera = &camera;
 	m_ActiveScene = &scene;
 
@@ -91,7 +91,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera) {
 
 	m_FinalImage->SetData(m_ImageData);
 
-	if(m_Settings.Accumulate)
+	if (m_Settings.Accumulate)
 		m_FrameIndex++;
 	else
 		m_FrameIndex = 1;
@@ -164,12 +164,12 @@ void Renderer::OnResize(uint32_t width, uint32_t height) {
 	for (uint32_t i = 0; i < width; i++)
 		m_ImageHorizontalIter[i] = i;
 	for (uint32_t i = 0; i < height; i++)
-		 m_ImageVertiacalIter[i] = i;
+		m_ImageVertiacalIter[i] = i;
 }
 
 Renderer::HitPayload Renderer::TraceRay(const Ray& ray) {
-	int closestSphereIndex = -1;
 	float hitDistance = std::numeric_limits<float>::max();
+	int closestSphereIndex = -1;
 	for (size_t i = 0; i < m_ActiveScene->Spheres.size(); i++)
 	{
 		const Sphere& sphere = m_ActiveScene->Spheres[i];
@@ -190,6 +190,30 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray) {
 			hitDistance = closestT;
 		}
 	}
+#define RENDER_TRIS
+#ifdef RENDER_TRIS
+	int closestTriIndex = -1;
+	for (size_t i = 0; i < m_ActiveScene->Triangles.size(); i++) {
+		Triangle& triangle = m_ActiveScene->Triangles[i];
+
+		if (triangle.Normal == glm::vec3(0)) {
+			// calculate Normal
+			glm::vec3 a = triangle.Vertices[0] - triangle.Vertices[1];
+			glm::vec3 b = triangle.Vertices[0] - triangle.Vertices[2];
+
+			glm::vec3 orthogonal = glm::cross(a, b);
+
+			triangle.Normal = orthogonal;
+		}
+
+		if (glm::dot(ray.Direction, triangle.Normal) == 0) {
+			continue;
+		}
+
+		// Do actual ray intersection with triangle
+	}
+#endif // RENDER_TRIS
+
 
 	if (closestSphereIndex < 0) {
 		return Miss(ray);
