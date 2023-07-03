@@ -78,6 +78,8 @@ public:
 		if (ImGui::Button("Reset")) {
 			m_Renderer.ResetFrameIndex();
 		}
+		ImGui::Separator();
+		ImGui::Checkbox("Fast random", &m_Renderer.GetSettings().Fast_Random);
 		ImGui::End();
 
 		ImGui::Begin("Scene");
